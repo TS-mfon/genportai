@@ -12,3 +12,4 @@ evm/cache
 *.log
 __pycache__
 *.pyc
+.vercel
