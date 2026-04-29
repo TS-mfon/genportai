@@ -1,0 +1,21 @@
+export const tables = {
+  users: ["id", "email", "created_at", "last_login_at", "status"],
+  wallet_connections: ["id", "user_id", "address", "chain_id", "verified_at"],
+  vaults: ["id", "user_id", "chain", "vault_address", "executor_address", "created_at", "paused"],
+  user_profiles: ["id", "user_id", "experience", "goal", "risk_tolerance", "time_horizon", "profile_hash"],
+  risk_policies: ["id", "user_id", "mode", "take_profit_pct", "stop_loss_pct", "max_trade_usd", "policy_hash"],
+  chat_threads: ["id", "user_id", "title", "created_at", "updated_at"],
+  chat_messages: ["id", "thread_id", "role", "content", "linked_action_id", "created_at"],
+  agent_actions: ["id", "user_id", "type", "status", "source", "summary", "risk", "action_hash", "created_at"],
+  market_snapshots: ["id", "provider", "snapshot_hash", "context_uri", "created_at"],
+  market_events: ["id", "snapshot_id", "token", "chain", "move_pct", "volume_usd", "risk", "detected_at"],
+  suggestion_batches: ["id", "segment_id", "snapshot_hash", "policy_hash", "genlayer_decision_hash", "created_at"],
+  suggestions: ["id", "batch_id", "user_id", "token", "chain", "action", "status", "reason", "expires_at"],
+  approvals: ["id", "suggestion_id", "user_id", "status", "signature", "created_at"],
+  executions: ["id", "action_id", "vault_id", "chain", "tx_hash", "status", "gas_used", "created_at"],
+  portfolio_balances: ["id", "user_id", "chain", "token", "amount", "value_usd", "indexed_at"],
+  pnl_snapshots: ["id", "user_id", "value_usd", "roi_pct", "pnl_usd", "created_at"],
+  audit_logs: ["id", "user_id", "event_type", "event_hash", "payload", "created_at"],
+  notifications: ["id", "user_id", "channel", "type", "status", "created_at"],
+  email_events: ["id", "user_id", "template", "provider_message_id", "status", "created_at"]
+} as const;

@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+dist
+artifacts
+cache
+evm/out
+evm/cache
+.env
+.env.local
+.env.*.local
+*.log
+__pycache__
+*.pyc
