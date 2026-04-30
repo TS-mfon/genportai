@@ -8,7 +8,7 @@ import { chainName, chains } from "@/lib/chains";
 import { supportedChains } from "@/lib/chain-config";
 
 export default function VaultsPage() {
-  const { data, addAction } = useAppState();
+  const { data } = useAppState();
 
   return (
     <Shell>
@@ -73,16 +73,7 @@ export default function VaultsPage() {
                 <Plus size={17} /> Deposit
               </button>
               <button
-                onClick={() => addAction({
-                  title: `Withdrawal request opened on ${chainName(vault.chain)}`,
-                  status: "waiting",
-                  chain: vault.chain,
-                  token: vault.nativeSymbol,
-                  amountUsd: 0,
-                  risk: 20,
-                  source: "user",
-                  summary: "Withdrawals require explicit user wallet signature before funds move."
-                })}
+                onClick={() => toast.info("Withdrawals require a funded vault and wallet signature. No funds detected yet.")}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/8 px-4 py-3 font-bold"
               >
                 <Wallet size={17} /> Withdraw

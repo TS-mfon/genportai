@@ -105,6 +105,12 @@ export type UserPolicy = {
 };
 
 export type DashboardData = {
+  user: {
+    email: string;
+    walletAddress: string;
+    signedIn: boolean;
+    onboardingComplete: boolean;
+  };
   portfolioValueUsd: number;
   roiPct: number;
   pnlUsd: number;

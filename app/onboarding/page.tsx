@@ -11,7 +11,7 @@ const risks = ["Low", "Medium", "High", "Very high"];
 const sectors = ["Majors", "DeFi", "AI", "Gaming", "L2s", "Stablecoins"];
 
 export default function OnboardingPage() {
-  const { data, updatePolicy, addToken } = useAppState();
+  const { data, updatePolicy, addToken, completeOnboarding } = useAppState();
 
   return (
     <Shell>
@@ -70,6 +70,7 @@ export default function OnboardingPage() {
             onClick={() => {
               updatePolicy({ mode: "approval_required", maxTradeUsd: 1000, stopLossPct: 6, takeProfitPct: 15 });
               ["ETH", "BTC", "USDC"].forEach((token) => addToken("whitelist", token));
+              completeOnboarding();
             }}
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mint px-4 py-3 font-bold text-ink"
           >

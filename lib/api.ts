@@ -1,4 +1,4 @@
-import { dashboardData } from "./mock-data";
+import { dashboardData } from "./initial-state";
 import type { AgentAction, ChatMessage, DashboardData, MarketEvent, Suggestion } from "./types";
 
 export async function getDashboardData(): Promise<DashboardData> {

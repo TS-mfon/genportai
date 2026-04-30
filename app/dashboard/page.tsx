@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Activity, BadgeDollarSign, Check, Gauge, Play, ShieldCheck, X } from "lucide-react";
 import { ActionTimeline } from "@/components/ActionTimeline";
 import { MetricCard } from "@/components/MetricCard";
@@ -33,6 +34,12 @@ export default function DashboardPage() {
           <h2 className="text-xl font-black">Portfolio curve</h2>
           <p className="text-sm text-slate-400">Your value and PNL over time.</p>
           <PortfolioChart data={data.portfolioHistory} />
+          {data.portfolioHistory.length === 0 ? (
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/6 p-5 text-sm text-slate-300">
+              No portfolio history yet. Connect a wallet, finish onboarding, and deposit into a vault.
+              <Link href="/vaults" className="ml-2 font-bold text-mint">Go to vaults</Link>
+            </div>
+          ) : null}
         </article>
 
         <article className="surface rounded-2xl p-5">
@@ -51,6 +58,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          {data.holdings.length === 0 ? <p className="mt-4 rounded-xl bg-white/6 p-4 text-sm text-slate-400">No holdings detected yet.</p> : null}
         </article>
       </section>
 
@@ -81,6 +89,11 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          {data.suggestions.length === 0 ? (
+            <div className="surface rounded-2xl p-6 text-slate-300">
+              No AI suggestions yet. AI proposals appear here only after CryptoRank market data and GenLayer analysis run.
+            </div>
+          ) : null}
         </div>
         <div>
           <h2 className="mb-4 text-2xl font-black">Agent action history</h2>

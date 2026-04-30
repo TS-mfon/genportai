@@ -2,11 +2,14 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { dashboardData } from "./mock-data";
+import { dashboardData } from "./initial-state";
 import type { AgentAction, ChatMessage, DashboardData, SuggestionStatus, UserPolicy } from "./types";
 
 type AppStateContextValue = {
   data: DashboardData;
+  signInWithEmail: (email: string) => void;
+  connectWallet: () => Promise<void>;
+  completeOnboarding: () => void;
   approveSuggestion: (id: string) => void;
   rejectSuggestion: (id: string) => void;
   executeSuggestion: (id: string) => void;
@@ -14,12 +17,11 @@ type AppStateContextValue = {
   removeToken: (list: "whitelist" | "blacklist", token: string) => void;
   updatePolicy: (patch: Partial<UserPolicy>) => void;
   sendChatMessage: (content: string) => void;
-  addAction: (action: Omit<AgentAction, "id" | "createdAt">) => void;
   resetWorkspace: () => void;
 };
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
-const storageKey = "genportai:v1";
+const storageKey = "genportai:v2";
 
 function createAction(input: Omit<AgentAction, "id" | "createdAt">): AgentAction {
   return {
@@ -57,6 +59,43 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppStateContextValue>(() => ({
     data,
+    signInWithEmail: (email) => {
+      const normalized = email.trim().toLowerCase();
+      if (!normalized || !normalized.includes("@")) {
+        toast.error("Enter a valid email");
+        return;
+      }
+      setData((current) => ({
+        ...current,
+        user: { ...current.user, email: normalized, signedIn: true }
+      }));
+      toast.success("Email signed in");
+    },
+    connectWallet: async () => {
+      const ethereum = (window as unknown as { ethereum?: { request: (args: { method: string }) => Promise<string[]> } }).ethereum;
+      if (!ethereum) {
+        toast.error("No wallet found. Install MetaMask or open in a wallet browser.");
+        return;
+      }
+      try {
+        const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+        const address = accounts[0] || "";
+        setData((current) => ({
+          ...current,
+          user: { ...current.user, walletAddress: address, signedIn: true }
+        }));
+        toast.success("Wallet connected");
+      } catch {
+        toast.error("Wallet connection rejected");
+      }
+    },
+    completeOnboarding: () => {
+      setData((current) => ({
+        ...current,
+        user: { ...current.user, onboardingComplete: true }
+      }));
+      toast.success("Onboarding saved");
+    },
     approveSuggestion: (id) => {
       const suggestion = data.suggestions.find((item) => item.id === id);
       if (!suggestion) return;
@@ -128,20 +167,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         if (existing.includes(normalized)) return current;
         return {
           ...current,
-          policy: { ...current.policy, [list]: [...existing, normalized] },
-          actions: [
-            createAction({
-              title: `Added ${normalized} to ${list}`,
-              status: "executed",
-              chain: "base",
-              token: normalized,
-              amountUsd: 0,
-              risk: list === "blacklist" ? 5 : 20,
-              source: "user",
-              summary: `Policy updated. ${normalized} is now in the ${list}.`
-            }),
-            ...current.actions
-          ]
+          policy: { ...current.policy, [list]: [...existing, normalized] }
         };
       });
       toast.success(`${normalized} added to ${list}`);
@@ -152,40 +178,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         policy: {
           ...current.policy,
           [list]: current.policy[list].filter((item) => item !== token)
-        },
-        actions: [
-          createAction({
-            title: `Removed ${token} from ${list}`,
-            status: "executed",
-            chain: "base",
-            token,
-            amountUsd: 0,
-            risk: 12,
-            source: "user",
-            summary: `Policy updated. ${token} was removed from the ${list}.`
-          }),
-          ...current.actions
-        ]
+        }
       }));
       toast.info(`${token} removed`);
     },
     updatePolicy: (patch) => {
       setData((current) => ({
         ...current,
-        policy: { ...current.policy, ...patch },
-        actions: [
-          createAction({
-            title: "Updated trading policy",
-            status: "executed",
-            chain: "base",
-            token: "POLICY",
-            amountUsd: 0,
-            risk: 18,
-            source: "user",
-            summary: "Risk settings changed and will be included in the next policy hash."
-          }),
-          ...current.actions
-        ]
+        policy: { ...current.policy, ...patch }
       }));
       toast.success("Settings saved");
     },
@@ -201,37 +201,18 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       const assistantMessage: ChatMessage = {
         id: `msg_${Date.now()}_a`,
         role: "assistant",
-        content: "I saved this chat to your history. For trade-impacting requests, I will create a suggestion or approval item instead of silently executing.",
+        content: "I saved this chat to your history. Trade proposals are only created by the AI suggestion engine after a GenLayer/CryptoRank analysis run.",
         createdAt: new Date().toISOString()
       };
       setData((current) => ({
         ...current,
-        chat: [...current.chat, userMessage, assistantMessage],
-        actions: [
-          createAction({
-            title: "Chat message processed",
-            status: "suggested",
-            chain: "base",
-            token: "CHAT",
-            amountUsd: 0,
-            risk: 10,
-            source: "chat",
-            summary: trimmed
-          }),
-          ...current.actions
-        ]
+        chat: [...current.chat, userMessage, assistantMessage]
       }));
       toast.success("Chat saved");
     },
-    addAction: (action) => {
-      setData((current) => ({
-        ...current,
-        actions: [createAction(action), ...current.actions]
-      }));
-      toast.success("Action recorded");
-    },
     resetWorkspace: () => {
       setData(dashboardData);
+      window.localStorage.removeItem("genportai:v1");
       window.localStorage.removeItem(storageKey);
       toast.info("Workspace reset");
     }
