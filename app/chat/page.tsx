@@ -10,6 +10,7 @@ export default function ChatPage() {
   const { data, sendChatMessage } = useAppState();
   const [message, setMessage] = useState("");
   const [query, setQuery] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const messages = data.chat.filter((item) => item.content.toLowerCase().includes(query.toLowerCase()));
 
   return (
@@ -37,12 +38,15 @@ export default function ChatPage() {
           <textarea value={message} onChange={(event) => setMessage(event.target.value)} className="mt-5 min-h-40 w-full rounded-2xl border border-white/10 bg-white/6 p-4 outline-none focus:border-mint/50" placeholder="Type your request..." />
           <button
             onClick={() => {
-              sendChatMessage(message);
+              const nextMessage = message;
               setMessage("");
+              setIsSending(true);
+              sendChatMessage(nextMessage).finally(() => setIsSending(false));
             }}
+            disabled={isSending}
             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-mint px-4 py-3 font-bold text-ink"
           >
-            <Send size={17} /> Send
+            <Send size={17} /> {isSending ? "Calling GenLayer..." : "Send to GenLayer"}
           </button>
         </aside>
       </div>

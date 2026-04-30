@@ -16,7 +16,7 @@ type AppStateContextValue = {
   addToken: (list: "whitelist" | "blacklist", token: string) => void;
   removeToken: (list: "whitelist" | "blacklist", token: string) => void;
   updatePolicy: (patch: Partial<UserPolicy>) => void;
-  sendChatMessage: (content: string) => void;
+  sendChatMessage: (content: string) => Promise<void>;
   resetWorkspace: () => void;
 };
 
@@ -189,7 +189,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       }));
       toast.success("Settings saved");
     },
-    sendChatMessage: (content) => {
+    sendChatMessage: async (content) => {
       const trimmed = content.trim();
       if (!trimmed) return;
       const userMessage: ChatMessage = {
@@ -198,17 +198,50 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
         content: trimmed,
         createdAt: new Date().toISOString()
       };
-      const assistantMessage: ChatMessage = {
-        id: `msg_${Date.now()}_a`,
-        role: "assistant",
-        content: "I saved this chat to your history. Trade proposals are only created by the AI suggestion engine after a GenLayer/CryptoRank analysis run.",
-        createdAt: new Date().toISOString()
-      };
       setData((current) => ({
         ...current,
-        chat: [...current.chat, userMessage, assistantMessage]
+        chat: [...current.chat, userMessage]
       }));
-      toast.success("Chat saved");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: trimmed,
+            policy: data.policy,
+            walletAddress: data.user.walletAddress,
+            email: data.user.email
+          })
+        });
+        const result = await response.json();
+        const assistantMessage: ChatMessage = {
+          id: `msg_${Date.now()}_a`,
+          role: "assistant",
+          content: result.reply || "GenLayer returned no answer.",
+          createdAt: new Date().toISOString()
+        };
+        setData((current) => ({
+          ...current,
+          chat: [...current.chat, assistantMessage],
+          suggestions: Array.isArray(result.suggestions) && result.suggestions.length > 0
+            ? [...result.suggestions, ...current.suggestions]
+            : current.suggestions,
+          actions: result.action
+            ? [createAction(result.action), ...current.actions]
+            : current.actions
+        }));
+        if (!response.ok) toast.error(result.reply || "GenLayer chat failed");
+      } catch {
+        const assistantMessage: ChatMessage = {
+          id: `msg_${Date.now()}_a`,
+          role: "assistant",
+          content: "GenLayer is unreachable right now. I did not create a trade proposal.",
+          createdAt: new Date().toISOString()
+        };
+        setData((current) => ({ ...current, chat: [...current.chat, assistantMessage] }));
+        toast.error("GenLayer unreachable");
+      }
     },
     resetWorkspace: () => {
       setData(dashboardData);

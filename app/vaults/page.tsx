@@ -8,7 +8,7 @@ import { chainName, chains } from "@/lib/chains";
 import { supportedChains } from "@/lib/chain-config";
 
 export default function VaultsPage() {
-  const { data } = useAppState();
+  const { data, connectWallet } = useAppState();
 
   return (
     <Shell>
@@ -16,7 +16,7 @@ export default function VaultsPage() {
         <p className="text-sm uppercase tracking-[0.3em] text-mint">Deposit funds first</p>
         <h1 className="mt-2 text-4xl font-black">Vaults</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
-          Pick a chain, copy your vault address, deposit funds, and keep a small native gas balance so trades can execute.
+          Connect a wallet first. Until EVM vault factories are deployed on mainnet, the real deposit address is your connected EVM wallet address.
         </p>
       </div>
 
@@ -36,18 +36,29 @@ export default function VaultsPage() {
       <div className="grid gap-4 xl:grid-cols-2">
         {data.vaults.map((vault) => (
           <article key={vault.chain} className="surface rounded-2xl p-5">
+            {(() => {
+              const depositAddress = vault.address || data.user.walletAddress;
+              const hasAddress = Boolean(depositAddress);
+              return (
+                <>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black">{chainName(vault.chain)}</h2>
-                <p className="mt-1 text-sm text-slate-400">{vault.address}</p>
+                <p className="mt-1 break-all text-sm text-slate-400">
+                  {hasAddress ? depositAddress : "No address yet. Connect wallet to generate a deposit address."}
+                </p>
               </div>
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(vault.address);
-                  toast.success("Vault address copied");
+                  if (!depositAddress) {
+                    toast.error("Connect wallet first");
+                    return;
+                  }
+                  navigator.clipboard.writeText(depositAddress);
+                  toast.success("Deposit address copied");
                 }}
                 className="rounded-xl bg-white/8 p-3"
-                aria-label="Copy vault address"
+                aria-label="Copy deposit address"
               >
                 <Copy size={17} />
               </button>
@@ -65,12 +76,16 @@ export default function VaultsPage() {
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(vault.address);
+                  if (!depositAddress) {
+                    connectWallet();
+                    return;
+                  }
+                  navigator.clipboard.writeText(depositAddress);
                   toast.success(`Deposit address copied for ${chainName(vault.chain)}`);
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-mint px-4 py-3 font-bold text-ink"
               >
-                <Plus size={17} /> Deposit
+                <Plus size={17} /> {hasAddress ? "Copy deposit address" : "Connect wallet"}
               </button>
               <button
                 onClick={() => toast.info("Withdrawals require a funded vault and wallet signature. No funds detected yet.")}
@@ -82,6 +97,9 @@ export default function VaultsPage() {
                 <ExternalLink size={17} /> Explorer
               </a>
             </div>
+                </>
+              );
+            })()}
           </article>
         ))}
       </div>
