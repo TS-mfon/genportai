@@ -3,12 +3,15 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { dashboardData } from "./initial-state";
-import type { AgentAction, ChatMessage, DashboardData, SuggestionStatus, UserPolicy } from "./types";
+import type { AgentAction, ChainKey, ChatMessage, DashboardData, OnboardingProfile, SuggestionStatus, UserPolicy } from "./types";
 
 type AppStateContextValue = {
   data: DashboardData;
-  signInWithEmail: (email: string) => void;
   connectWallet: () => Promise<void>;
+  generateAgentWallet: () => Promise<void>;
+  updateProfile: (patch: Partial<OnboardingProfile>) => void;
+  toggleProfileChain: (chain: ChainKey) => void;
+  toggleProfileSector: (sector: string) => void;
   completeOnboarding: () => void;
   approveSuggestion: (id: string) => void;
   rejectSuggestion: (id: string) => void;
@@ -21,7 +24,7 @@ type AppStateContextValue = {
 };
 
 const AppStateContext = createContext<AppStateContextValue | null>(null);
-const storageKey = "genportai:v2";
+const storageKey = "genportai:v3";
 
 function createAction(input: Omit<AgentAction, "id" | "createdAt">): AgentAction {
   return {
@@ -59,18 +62,6 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AppStateContextValue>(() => ({
     data,
-    signInWithEmail: (email) => {
-      const normalized = email.trim().toLowerCase();
-      if (!normalized || !normalized.includes("@")) {
-        toast.error("Enter a valid email");
-        return;
-      }
-      setData((current) => ({
-        ...current,
-        user: { ...current.user, email: normalized, signedIn: true }
-      }));
-      toast.success("Email signed in");
-    },
     connectWallet: async () => {
       const ethereum = (window as unknown as { ethereum?: { request: (args: { method: string }) => Promise<string[]> } }).ethereum;
       if (!ethereum) {
@@ -80,14 +71,60 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       try {
         const accounts = await ethereum.request({ method: "eth_requestAccounts" });
         const address = accounts[0] || "";
+        let agentWalletAddress = data.user.agentWalletAddress;
+        let agentWalletPrivateKey = data.user.agentWalletPrivateKey;
+        if (!agentWalletAddress || !agentWalletPrivateKey) {
+          const { generatePrivateKey, privateKeyToAccount } = await import("viem/accounts");
+          agentWalletPrivateKey = generatePrivateKey();
+          agentWalletAddress = privateKeyToAccount(agentWalletPrivateKey).address;
+        }
         setData((current) => ({
           ...current,
-          user: { ...current.user, walletAddress: address, signedIn: true }
+          user: { ...current.user, walletAddress: address, agentWalletAddress, agentWalletPrivateKey, signedIn: true }
         }));
-        toast.success("Wallet connected");
+        toast.success("Owner wallet connected and agent wallet bound");
       } catch {
         toast.error("Wallet connection rejected");
       }
+    },
+    generateAgentWallet: async () => {
+      const { generatePrivateKey, privateKeyToAccount } = await import("viem/accounts");
+      const privateKey = generatePrivateKey();
+      const account = privateKeyToAccount(privateKey);
+      setData((current) => ({
+        ...current,
+        user: {
+          ...current.user,
+          agentWalletAddress: account.address,
+          agentWalletPrivateKey: privateKey
+        }
+      }));
+      toast.success("New agent wallet generated");
+    },
+    updateProfile: (patch) => {
+      setData((current) => ({
+        ...current,
+        user: {
+          ...current.user,
+          profile: { ...current.user.profile, ...patch }
+        }
+      }));
+    },
+    toggleProfileChain: (chain) => {
+      setData((current) => {
+        const chains = current.user.profile.chains.includes(chain)
+          ? current.user.profile.chains.filter((item) => item !== chain)
+          : [...current.user.profile.chains, chain];
+        return { ...current, user: { ...current.user, profile: { ...current.user.profile, chains } } };
+      });
+    },
+    toggleProfileSector: (sector) => {
+      setData((current) => {
+        const sectors = current.user.profile.sectors.includes(sector)
+          ? current.user.profile.sectors.filter((item) => item !== sector)
+          : [...current.user.profile.sectors, sector];
+        return { ...current, user: { ...current.user, profile: { ...current.user.profile, sectors } } };
+      });
     },
     completeOnboarding: () => {
       setData((current) => ({
@@ -211,7 +248,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
             message: trimmed,
             policy: data.policy,
             walletAddress: data.user.walletAddress,
-            email: data.user.email
+            agentWalletAddress: data.user.agentWalletAddress,
+            profile: data.user.profile
           })
         });
         const result = await response.json();
@@ -246,6 +284,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     resetWorkspace: () => {
       setData(dashboardData);
       window.localStorage.removeItem("genportai:v1");
+      window.localStorage.removeItem("genportai:v2");
       window.localStorage.removeItem(storageKey);
       toast.info("Workspace reset");
     }

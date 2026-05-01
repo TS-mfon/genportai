@@ -16,7 +16,7 @@ export default function VaultsPage() {
         <p className="text-sm uppercase tracking-[0.3em] text-mint">Deposit funds first</p>
         <h1 className="mt-2 text-4xl font-black">Vaults</h1>
         <p className="mt-3 max-w-3xl text-slate-400">
-          Connect a wallet first. Until EVM vault factories are deployed on mainnet, the real deposit address is your connected EVM wallet address.
+          Deposit to the generated agent wallet. This is the address the AI executor can use, while your connected wallet remains the owner.
         </p>
       </div>
 
@@ -37,7 +37,7 @@ export default function VaultsPage() {
         {data.vaults.map((vault) => (
           <article key={vault.chain} className="surface rounded-2xl p-5">
             {(() => {
-              const depositAddress = vault.address || data.user.walletAddress;
+              const depositAddress = vault.address || data.user.agentWalletAddress;
               const hasAddress = Boolean(depositAddress);
               return (
                 <>
@@ -45,13 +45,13 @@ export default function VaultsPage() {
               <div>
                 <h2 className="text-xl font-black">{chainName(vault.chain)}</h2>
                 <p className="mt-1 break-all text-sm text-slate-400">
-                  {hasAddress ? depositAddress : "No address yet. Connect wallet to generate a deposit address."}
+                  {hasAddress ? depositAddress : "No agent wallet yet. Connect owner wallet or generate an agent wallet first."}
                 </p>
               </div>
               <button
                 onClick={() => {
                   if (!depositAddress) {
-                    toast.error("Connect wallet first");
+                    toast.error("Generate an agent wallet first");
                     return;
                   }
                   navigator.clipboard.writeText(depositAddress);

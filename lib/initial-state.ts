@@ -3,10 +3,17 @@ import type { DashboardData } from "./types";
 
 export const dashboardData: DashboardData = {
   user: {
-    email: "",
     walletAddress: "",
+    agentWalletAddress: "",
+    agentWalletPrivateKey: "",
     signedIn: false,
-    onboardingComplete: false
+    onboardingComplete: false,
+    profile: {
+      goal: "",
+      risk: "",
+      sectors: [],
+      chains: []
+    }
   },
   portfolioValueUsd: 0,
   roiPct: 0,

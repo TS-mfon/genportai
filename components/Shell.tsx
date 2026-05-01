@@ -18,7 +18,7 @@ const nav = [
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="min-h-screen grid-bg">
-      <aside className="fixed left-0 top-0 hidden h-screen w-72 border-r border-white/10 bg-[#080c15]/92 p-5 lg:block">
+      <aside className="fixed left-0 top-0 hidden h-screen w-72 border-r border-white/10 bg-[#070a12]/95 p-5 lg:block">
         <Link href="/" className="mb-8 flex items-center gap-3">
           <span className="grid h-11 w-11 place-items-center rounded-xl bg-mint/15 text-mint">
             <Shield size={22} />
@@ -57,11 +57,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <section className="lg:pl-72">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#080c15]/80 px-5 py-4 backdrop-blur lg:px-8">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#070a12]/85 px-5 py-4 backdrop-blur lg:px-8">
           <Link href="/" className="font-black lg:hidden">GenPortAI</Link>
           <div className="hidden text-sm text-slate-400 lg:block">Hourly AI scan active. Next GenLayer batch in 21m.</div>
           <div className="flex items-center gap-3">
-            <span className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-xs text-mint">Gas guarded</span>
+            <span className="rounded-full border border-mint/30 bg-mint/10 px-3 py-1 text-xs text-mint">Agent wallet</span>
             <span className="rounded-full border border-cyan/30 bg-cyan/10 px-3 py-1 text-xs text-cyan">5 chains</span>
           </div>
         </header>

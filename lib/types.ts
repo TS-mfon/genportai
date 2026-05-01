@@ -104,12 +104,21 @@ export type UserPolicy = {
   blacklist: string[];
 };
 
+export type OnboardingProfile = {
+  goal: string;
+  risk: string;
+  sectors: string[];
+  chains: ChainKey[];
+};
+
 export type DashboardData = {
   user: {
-    email: string;
     walletAddress: string;
+    agentWalletAddress: string;
+    agentWalletPrivateKey: `0x${string}` | "";
     signedIn: boolean;
     onboardingComplete: boolean;
+    profile: OnboardingProfile;
   };
   portfolioValueUsd: number;
   roiPct: number;

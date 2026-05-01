@@ -54,6 +54,38 @@ function extractSuggestions(receipt: unknown): Suggestion[] {
   }
 }
 
+function isMarketPrompt(message: string) {
+  const normalized = message.toLowerCase();
+  return [
+    "buy",
+    "sell",
+    "token",
+    "trade",
+    "portfolio",
+    "market",
+    "suggest",
+    "recommend",
+    "rebalance",
+    "profit",
+    "loss",
+    "risk"
+  ].some((word) => normalized.includes(word));
+}
+
+function normalChatReply(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("hello") || normalized.includes("hi ")) {
+    return "Hi. I can help you understand your portfolio setup, explain risk controls, and request GenLayer market analysis when you ask for trade or token suggestions.";
+  }
+  if (normalized.includes("agent wallet")) {
+    return "Your agent wallet is the generated trading wallet bound to your connected owner wallet. Deposits go to the agent wallet so the executor can act within your rules.";
+  }
+  if (normalized.includes("deposit")) {
+    return "Go to Vaults, copy the agent wallet address for the chain you want to fund, and keep native gas on that chain. The AI cannot trade without gas.";
+  }
+  return "I can answer setup questions directly. If you ask what to buy, sell, rebalance, or watch, I will call GenLayer and create AI proposals only after the oracle responds.";
+}
+
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const message = String(body.message || "").trim();
@@ -62,10 +94,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ reply: "Send a question first." }, { status: 400 });
   }
 
+  if (!isMarketPrompt(message)) {
+    return NextResponse.json({
+      reply: normalChatReply(message),
+      suggestions: []
+    });
+  }
+
   const compactContext = [
     `User question: ${message}`,
     `Wallet: ${body.walletAddress || "not connected"}`,
-    `Email: ${body.email || "not provided"}`,
+    `Agent wallet: ${body.agentWalletAddress || "not generated"}`,
+    `Profile: ${JSON.stringify(body.profile || {})}`,
     `Policy: ${JSON.stringify(body.policy || {})}`,
     "Only AI may propose trade actions. Return exactly 5 suggestions if the user asks what to buy/sell; otherwise include safe watch/hold suggestions."
   ].join("\n");
